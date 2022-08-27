@@ -1,0 +1,682 @@
+6. 基础算法
+
+1. 位运算
+2. 递推与递归
+3. 前缀和与差分
+4. 二分
+5. 排序
+6. RMQ
+
+1. 位运算
+
+AcWing 90. 64位整数乘法	O(logb)
+1≤a,b,p≤10^18
+
+快速幂: 乘法 -> 乘方
+今天: 加法 -> 乘法
+
+转化成a个b相加
+a  % p
+2a % p
+4a % p
+8a % p
+……
+2^62a % p
+
+b = (11010)2
+b = 2^1 + 2^3 + 2^4
+ab = 2^1a + 2^3a + 2^4a
+
+代码:
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 5e4+10, M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 1e9+7;
+
+ll qadd(ll a,ll b,ll p){
+    ll res = 0;
+    while(b){
+        if(b&1) res = (res + a) % p;
+        a = (a + a) % p;
+        b>>=1;
+    }
+    return res;
+}
+
+int main(){
+    ll a,b,p;
+    scanf("%lld%lld%lld",&a,&b,&p);
+    printf("%lld\n",qadd(a,b,p));
+    return 0;
+}
+
+=========================================
+
+2. 递推与递归
+AcWing 95. 费解的开关
+假设第一行的开关已经被锁死了
+只要第一行开关的状态确定，则所有开关的状态都可以被推出来
+Q:最少按多少次，可以全部变成1
+
+2^5枚举方式
+for(int i = 0;i<32;i++)
+
+代码:
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 10, M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 1e9+7;
+
+char g[N][N], bg[N][N];
+int dx[5] = {-1,0,1,0,0};
+int dy[5] = {0,1,0,-1,0};
+
+void turn(int x,int y){
+    for(int i = 0;i<5;i++){
+        int a = x + dx[i], b = y + dy[i];
+        if(a<0||a>=5||b<0||b>=5) continue;
+        g[a][b] ^= 1;
+    }
+}
+
+int main(){
+    int T; scanf("%d",&T);
+    while(T--){
+        int res = 10;
+        for(int i = 0;i<5;i++) scanf("%s",bg[i]);
+        for(int op = 0;op<32;op++){
+            memcpy(g,bg,sizeof(bg));
+            int cnt = 0;
+            for(int i = 0;i<5;i++){
+                if(op>>i&1){
+                    turn(0,i);
+                    cnt++;
+                }
+            }
+            for(int i = 1;i<=4;i++){
+                for(int j = 0;j<5;j++){
+                    if(g[i-1][j]=='0') {
+                        turn(i,j);
+                        cnt++;
+                    }
+                }
+            }
+            bool success = true;
+            for(int i = 0;i<5;i++){
+                if(g[4][i]=='0') success = false;
+            }
+            if(success&&res>cnt) res = cnt;
+        }
+        if(res>6) res = -1;
+        printf("%d\n",res);
+    }
+    return 0;
+}
+
+-------------------------------
+
+AcWing 97. 约数之和 	O(2logN)
+
+分治:快排,归并排序
+约数之和公式： A = p1^c1 * p2^c2 * ... *pk^ck
+约数个数： (c1 + 1) * (c2 + 1) * ... * (ck + 1)
+约数之和： (p1^0 + p1^1 + ... + p1^c1) * ... * (pk^0 + pk^1 + ... + pk^ck)
+
+A^B = p1^(c1*b1) * p2^(c2*b2) * ... *pk^(ck*bk)
+
+p^0 + p^1 + ... + p^k = (p^k-1)/(p-1) = sum(p,k)
+
+1. k是偶数
+   sum(p,k) = p^0 + p^1 + ... + p^(k/2-1) + p^(k/2)+ ... + p^(k-1)
+   			= sum(p,k/2) + p^(k/2) * sum(p,k/2)
+   			= (1+p^(k/2))*sum(p,k/2)
+
+2. k是奇数
+   sum(p,k) = p^0 + p^1 + ... + p^(k-1)
+   			= p^(k-1) + p^0 + p^1 + ... + p^(k-2)
+   			= p^(k-1) + sum(p,k-1)
+
+代码：
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 10, M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+
+int qmi(int a,int b){
+    int res = 1;
+    a %= mod;
+    while(b){
+        if(b&1) res = res * a % mod;
+        a = a * a % mod;
+        b >>= 1;
+    }
+    return res;
+}
+
+int sum(int p,int k){
+    if(k==1) return 1;
+    if(k%2==0) return (1+qmi(p,k/2))*sum(p,k/2) % mod;
+    return (qmi(p,k-1)+sum(p,k-1)) % mod;
+}
+
+int main(){
+    int a,b;
+    scanf("%d%d",&a,&b);
+    int res = 1;
+    for(int i = 2;i<=a/i;i++){
+        if(a%i==0){
+            int s = 0;
+            while(a%i==0){
+                a/=i;
+                s++;
+            }
+            res = res * sum(i,b*s+1) % mod;
+        }
+    }
+    if(a>1) res = res * sum(a,b+1) % mod;
+    if(a==0) res = 0;
+    printf("%d\n",res);
+}
+
+-------------------------------
+
+AcWing 98. 分形之城 
+
+画图，分块
+
+代码:
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 10, M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+#define x first
+#define y second
+
+struct Point{
+    ll x,y;
+};
+
+Point find(ll n,ll a){
+    if(n==0) return {0,0};
+    ll len = 1ll<<(n-1), block = 1ll<<(2*n-2);
+    auto p = find(n-1,a%block);
+    ll x = p.x, y = p.y;
+    int z = a / block;
+    if(z==0) return {y,x};
+    else if(z==1) return {x,y+len};
+    else if(z==2) return {x+len,y+len};
+    return {2 * len - y - 1,len - x - 1};
+}
+
+int main(){
+    int T; scanf("%d",&T);
+    while(T--){
+        ll n,a,b;
+        scanf("%lld%lld%lld",&n,&a,&b);
+        auto pa = find(n,a-1);
+        auto pb = find(n,b-1);
+        double dx = pa.x - pb.x;
+        double dy = pa.y - pb.y;
+        printf("%.0lf\n",10*sqrt(dx*dx+dy*dy));
+    }
+    return 0;
+}
+
+=========================================
+3. 前缀和与差分
+前缀和
+AcWing 99. 激光炸弹
+(R-1)(R-1)的矩阵
+二维前缀和
+R>5002
+
+代码:
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 5100, M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+#define x first
+#define y second
+
+int n,R;
+int s[N][N];
+
+int main(){
+    scanf("%d%d",&n,&R);
+    R = min(R,5001);
+    for(int i = 0;i<n;i++){
+        int x,y,w;
+        scanf("%d%d%d",&x,&y,&w);
+        x++,y++;
+        s[x][y] += w;
+    }
+    for(int i = 1;i<=5001;i++){
+        for(int j = 1;j<=5001;j++){
+            s[i][j] += s[i-1][j] + s[i][j-1] - s[i-1][j-1];
+        }
+    }
+    int res = 0;
+    for(int i = R;i<=5001;i++){
+        for(int j = R;j<=5001;j++){
+            res = max(res,s[i][j] - s[i-R][j] - s[i][j-R] + s[i-R][j-R]);
+        }
+    }
+    printf("%d\n",res);
+    return 0;
+}
+
+差分
+b1 = a1
+b2 = a2-a1
+b3 = a3-a2
+……
+bn = an-an-1
+
+求全部数列为一个数
+b2～bn = 0
+b1任意
+
+aL~aR +1  <==> bL+=1, bR+1-=1
+
+1. 至少操作多少次，可使b2~bn都为0
+2. b1有多少种值
+
+b1~bn+1
+1. 2<=L<=R<=n-1     在bL～bn中令某一个数加一，另一个数减一
+2. L=1  R<=n-1      b1加/减1，bL～bn中令某一个数加一
+3. 2<=L R=n         bn加/减1，bL～bn中令某一个数加一
+4. L=1  R=n         无意义
+
+min{p,q}+|p-q| = max{p,q}
+个数 = |p-q|+1
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 1e5+10, M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+#define x first
+#define y second
+
+int n,b[N],a[N];
+
+int main(){
+    scanf("%d",&n);
+    for(int i = 1;i<=n;i++) scanf("%d",&a[i]);
+    for(int i = 1;i<=n;i++) b[i] = a[i] - a[i-1];
+    ll p = 0,q = 0;
+    for(int i = 2;i<=n;i++){
+        if(b[i]>0) p+=b[i];
+        else q-=b[i];
+    }
+    printf("%lld\n",max(p,q));
+    printf("%lld\n",abs(p-q)+1);
+}
+
+=========================================
+4. 二分
+AcWing 102. 最佳牛围栏
+给定avg，判断是否存在一个方案使其平均值>=avg
+ai -= avg
+是否存在长度大于等于F的一段和>=0 
+
+Sk-S0~k-F中的最小值
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 100010 , M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+#define x first
+#define y second
+
+int n,F;
+double a[N],s[N];
+
+bool check(double avg){
+    for(int i = 1;i<=n;i++) s[i] = s[i-1] + a[i] - avg;
+    double mins = INF;
+    for(int i = F;i<=n;i++){
+        mins = min(mins,s[i-F]);
+        if(s[i]>=mins) return true;
+    }
+    return false;
+}
+
+int main(){
+    scanf("%d%d",&n,&F);
+    double l = 0, r = 0;
+    for(int i = 1;i<=n;i++) {
+        scanf("%lf",&a[i]);
+        r = max(r,a[i]);
+    }
+    while(r-l>1e-5){
+        double mid = (l+r)/2;
+        if(check(mid)) l = mid;
+        else r = mid;
+    }
+    printf("%d\n",(int)(r*1000));
+}
+=========================================
+
+5. 排序
+
+AcWing 105. 七夕祭
+1. 操作行  -> min
+2. 操作列  -> min
+==>环形均分纸牌问题==>112题
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 100010 , M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+#define x first
+#define y second
+
+int n,m,T;
+int row[N],col[N],s[N],c[N];
+
+ll solve(int n,int a[]){
+    for(int i = 1;i<=n;i++) s[i] = s[i-1] + a[i];
+    if(s[n]%n) return -1;
+    int avg = s[n] / n;
+    c[1] = 0;
+    for(int i = 2;i<=n;i++) c[i] = s[i-1] - avg * (i-1);
+    sort(c+1,c+n+1);
+    ll res = 0;
+    for(int i = 1;i<=n;i++) res += abs(c[i]-c[(n+1)/2]);
+    return res;
+
+}
+
+int main(){
+    scanf("%d%d%d",&n,&m,&T);
+    while(T--){
+        int x,y;
+        scanf("%d%d",&x,&y);
+        row[x]++, col[y]++;
+    }
+    ll r1 = solve(n,row);
+    ll r2 = solve(m,col);
+    if(r1!=-1&&r2!=-1) printf("both %lld\n",r1+r2);
+    else if(r1!=-1) printf("row %lld\n",r1);
+    else if(r2!=-1) printf("column %lld\n",r2);
+    else puts("impossible");
+    return 0;
+}
+
+-------------------------------
+
+AcWing 106. 动态中位数
+对顶堆
+上面：小根堆  up
+下面：大根堆  down
+
+假设已经建立好对顶堆
+1. 上面所有元素 >= 下面所有元素
+2. 下面的个数最多比上面多1
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 100010 , M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+#define x first
+#define y second
+
+int main(){
+    int T; scanf("%d",&T);
+    while(T--){
+        int n,m;
+        scanf("%d%d",&m,&n);
+        printf("%d %d\n",m,(n+1)/2);
+        priority_queue<int,vector<int>,greater<int>> up;
+        priority_queue<int> down;
+        int cnt = 0;
+        for(int i = 1;i<=n;i++){
+            int x; scanf("%d",&x);
+            if(down.empty()||x<=down.top()) down.push(x);
+            else up.push(x);
+            if(down.size()>up.size()+1) up.push(down.top()),down.pop();
+            if(up.size()>down.size()) down.push(up.top()),up.pop();
+            if(i%2){
+                printf("%d ",down.top());
+                if(++cnt%10==0) puts("");
+            }
+        }
+        if(cnt%10) puts("");
+    }
+
+}
+
+-------------------------------
+
+AcWing 107. 超快速排序
+
+逆序对数量为0
+
+k -> 0 至少操作k次
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 500010 , M = 1<<20;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+#define x first
+#define y second
+
+int n;
+ll q[N],w[N];
+
+ll merge_sort(int l,int r){
+    if(l==r) return 0;
+    int mid = l+r>>1;
+    int i = l, j = mid + 1, k = 1;
+    ll res = merge_sort(l,mid) + merge_sort(mid+1,r);
+    while(i<=mid&&j<=r) {
+        if(q[i]<=q[j]) w[k++] = q[i++];
+        else{
+            res += mid - i + 1;
+            w[k++] = q[j++];
+        }
+    }
+    while(i<=mid) w[k++] = q[i++];
+    while(j<=r) w[k++] = q[j++];
+    for(i = l,j = 1;i<=r;i++,j++) q[i] = w[j];
+    return res;
+    
+}
+
+int main(){
+    while(scanf("%d",&n),n){
+        for(int i = 1;i<=n;i++) scanf("%lld",&q[i]);
+        printf("%lld\n",merge_sort(1,n));
+    }
+}
+
+=========================================
+
+6. RMQ(区间最值问题)
+
+f[i][j] 表示从i开始，长度为2^j的区间中最大值是多少
+f[i][j] = max(f[i][j-1],f[i+2^(j-1)][j-1])  nlogn
+
+2^k <= len
+2*2^k > len
+
+#include <iostream>
+#include <vector>
+#include <cmath>
+#include <algorithm>
+#include <unordered_set>
+#include <cstring>
+#include <queue>
+#include <stack>
+#include <unordered_map>
+using namespace std;
+const int N = 18, M = 200010;
+typedef long long ll;
+typedef pair<int,int> PII;
+const double eps = 1e-8;
+const int INF = 0x3f3f3f3f;
+const int mod = 9901;
+#define x first
+#define y second
+
+int n;
+int w[M];
+int f[M][N];
+
+void init(){
+    for(int j = 0;j<N;j++){
+        for(int i = 1;i+(1<<j)-1<=n;i++){
+            if(!j) f[i][j] = w[i];
+            else f[i][j] = max(f[i][j-1],f[i+(1<<j-1)][j-1]);
+        }
+    }
+}
+
+int query(int l,int r){
+    int len = r - l + 1;
+    int t = log(len) / log(2);
+    return max(f[l][t],f[r-(1<<t)+1][t]);
+}
+
+int main(){
+    scanf("%d",&n);
+    for(int i = 1;i<=n;i++) scanf("%d",&w[i]);
+    init();
+    int m; scanf("%d",&m);
+    while(m--){
+        int l,r;
+        scanf("%d%d",&l,&r);
+        printf("%d\n",query(l,r));
+    }
+    return 0;
+}
+
+
+
+
+
+
+
+
+
+
+
