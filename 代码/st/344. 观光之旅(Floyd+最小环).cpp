@@ -7,31 +7,30 @@ using namespace std;
 const int N = 110, INF = 0x3f3f3f3f;
 
 int n,m;
-int d[N][N],g[N][N];
+int d[N][N], g[N][N];
+int cnt;
+int path[N];
 int pos[N][N];
-int path[N],cnt;
 
-
-void get_path(int i,int j){
-    if(pos[i][j] == 0) return;
-    int k = pos[i][j];
-    get_path(i,k);
+void get_path(int x,int y){
+    int k = pos[x][y];
+    if(k==0) return;
+    get_path(x,k);
     path[cnt++] = k;
-    get_path(k,j);
+    get_path(k,y);
 }
 
 int main(){
-    FAST
     cin >> n >> m;
     memset(g,0x3f,sizeof(g));
     for(int i = 1;i<=n;i++) g[i][i] = 0;
     while(m--){
         int a,b,c;
         cin >> a >> b >> c;
-        g[a][b] = g[b][a] = min(g[a][b],c);
+        g[a][b] = g[b][a] = min(g[a][b], c);
     }
+    memcpy(d,g,sizeof(g));
     int res = INF;
-    memcpy(d,g,sizeof(d));
     for(int k = 1;k<=n;k++){
         for(int i = 1;i<k;i++){
             for(int j = i+1;j<k;j++){
@@ -56,8 +55,10 @@ int main(){
     }
     if(res==INF) puts("No solution.");
     else{
-        for(int i = 0;i<cnt;i++) cout << path[i] << ' ';
-        cout << endl; 
+        for(int i = 0;i<cnt;i++){
+            cout << path[i] << ' ';
+        }
+        cout << '\n';
     }
     return 0;
 }
