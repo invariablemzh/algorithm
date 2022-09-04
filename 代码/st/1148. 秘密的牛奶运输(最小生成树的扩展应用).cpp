@@ -29,14 +29,14 @@ int find(int x){
     return p[x];
 }
 
-void dfs(int u,int fa,int maxd1, int maxd2, int d1[], int d2[]){
-    d1[u] = td1, d2[u] = td2;
+void dfs(int u,int fa,int maxd1, int maxd2, int d1[],int d2[]){
+    d1[u] = maxd1, d2[u] = maxd2;
     for(int i = h[u];~i;i=ne[i]){
         int j = e[i];
         if(j==fa) continue;
         int td1 = maxd1, td2 = maxd2;
-        if(w[i] > td1) td2 = td1, td1 = w[i];
-        else if(w[i] < td1 && w[i] > td2) td2 = w[i];
+        if(td1 < w[i]) td2 = td1, td1 = w[i];
+        else if(td1 > w[i] && w[i] > td2) td2 = w[i];
         dfs(j,u,td1,td2,d1,d2);
     }
 }
@@ -45,9 +45,9 @@ void solve(){
     memset(h,-1,sizeof(h));
     cin >> n >> m;
     for(int i = 0;i<m;i++){
-        int a,b,w;
+        int a, b, w;
         cin >> a >> b >> w;
-        edges[i] = {a,b,w,false};
+        edges[i] = {a,b,w, false};
     }
     sort(edges, edges + m);
     for (int i = 1; i <= n; i ++ ) p[i] = i;    // 初始化并查集
@@ -56,31 +56,24 @@ void solve(){
         int a = edges[i].a, b = edges[i].b, w = edges[i].w;
         int pa = find(a), pb = find(b);
         if (pa != pb){
+            edges[i].f = true;
             p[pa] = pb;
             add(a,b,w), add(b,a,w);
             sum += w;
         }
     }
-    for(int i = 1;i<=n;i++){
-        dfs(i,-1,-1e9,-1e9,dist1[i],dist2[i]);
-    }
-    
+    for(int i = 1;i<=n;i++) dfs(i,-1,-1e9,-1e9,dist1[i],dist2[i]);
     ll res = 1e18;
-    for(int i =0;i<m;i++){
+    for(int i = 0;i<m;i++){
         if(!edges[i].f){
+            ll t = 1e18;
             int a = edges[i].a, b = edges[i].b, w = edges[i].w;
-            ll t;
-            if(w > dist1[a][b]){
-                t = sum + w - dist1[a][b]; 
-            }
-            else if(w > dist2[a][b]){
-                t = sum + w - dist2[a][b];
-            }
+            if(w > dist1[a][b]) t = sum - dist1[a][b] + w;
+            else if(w > dist2[a][b]) t = sum - dist2[a][b] + w;
             res = min(res,t);
         }
     }
     cout << res << '\n';
-
 }
 
 int main(){
