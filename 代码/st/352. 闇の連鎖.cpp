@@ -9,10 +9,19 @@ typedef pair<int,int> PII;
     cin.tie(0);                                                                                                        \
     cout.tie(0);
 
+const int N = 100010, M = 200010, INF = 0x3f3f3f3f;
+int n,m;
+
+
+void solve(){
+
+}
+
+
 int main(){
     FAST
     int T = 1;
-    cin >> T;
+    // cin >> T;
     while(T--) solve();
     
 }
